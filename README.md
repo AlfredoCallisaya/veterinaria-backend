@@ -1,3 +1,24 @@
+# Sistema de Gestión Veterinaria
+
+Este proyecto es una aplicación web desarrollada en Django para la gestión de una clínica veterinaria.  
+Permite administrar clientes, mascotas, citas, consultas, inventario, compras, facturación y pagos.
+
+------------------------------------------------------------------------------------------------------
+
+## Descripción
+Backend del sistema de gestión veterinaria desarrollado con Django y MySQL.
+
+## Tecnologías
+- Django 5.2.6
+- MySQL 8.0
+- Python 3.13
+- Django REST Framework (opcional)
+
+## Base de Datos
+- MySQL 8.0+
+- Diagrama ER: `Diagrama_ER.png`
+- Diagrama Relacional: `Diagrama_Relacional.png`
+
 ## Migraciones de Base de Datos
 
 ### Para desarrolladores:
