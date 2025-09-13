@@ -1,0 +1,43 @@
+# Crear .gitignore ANTES de agregar archivos
+@"
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+
+# Environments
+.env
+.venv
+venv/
+env/
+
+# Database
+*.sqlite3
+*.db
+
+# Django migrations (¡IMPORTANTE!)
+usuarios/migrations/
+
+# Django
+media/
+staticfiles/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local settings
+local_settings.py
+"@ | Out-File -Encoding UTF8 .gitignore
