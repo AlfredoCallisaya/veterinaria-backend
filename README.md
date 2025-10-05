@@ -3,46 +3,55 @@
 Este proyecto es una aplicación web desarrollada en Django para la gestión de una clínica veterinaria.  
 Permite administrar clientes, mascotas, citas, consultas, inventario, compras, facturación y pagos.
 
-------------------------------------------------------------------------------------------------------
+## 🐳 Ejecutar con Docker 
 
-## Descripción
-Backend del sistema de gestión veterinaria desarrollado con Django y MySQL.
+### Prerrequisitos
+- Docker
+- Docker Compose
 
-## Tecnologías
-- Django 5.2.6
-- MySQL 8.0
-- Python 3.13
-- Django REST Framework (opcional)
+### Instalación rápida
+```bash
+# Clonar el repositorio
+- git clone 
+- cd veterinaria-backend
 
-## Base de Datos
-- MySQL 8.0+
-- Diagrama ER: `Diagrama_ER.png`
-- Diagrama Relacional: `Diagrama_Relacional.png`
+# Ejecutar con Docker Compose
+- docker-compose up -d
 
-## Migraciones de Base de Datos
+### Acceder a la aplicación
+- Aplicación: http://localhost:8000
+- Base de datos MySQL: localhost:3306
 
-### Para desarrolladores:
-1. Clonar el repositorio
-2. Crear entorno virtual: `python -m venv venv`
-3. Activar entorno: `venv\Scripts\activate`
-4. Instalar dependencias: `pip install -r requirements.txt`
-5. Instalar django `pip install django`
-6. Instalar sql `pip install mysqlclient`
-7. **Generar migraciones**: `python manage.py makemigrations`
-8. **Aplicar migraciones**: `python manage.py migrate`
-9. Ejecutar servidor: `python manage.py runserver`
+### Usuario por defecto
+- Correo: admin@veterinaria.com
+- Contraseña: admin123
 
-### Nota importante:
-- Las migraciones NO están incluidas en el repositorio
-- Cada desarrollador debe generarlas localmente
-- Esto previene conflictos en las migraciones
+### Comandos útiles
+# Ver logs en tiempo real
+- docker-compose logs -f web
 
-# Crear carpeta migrations vacía
-mkdir usuarios/migrations
-New-Item -Path usuarios/migrations -Name "__init__.py" -ItemType File
+# Ejecutar comandos Django
+- docker-compose exec web python manage.py migrate
+- docker-compose exec web python manage.py createsuperuser
 
-# Generar migraciones frescas
-python manage.py makemigrations
+# Detener la aplicación
+- docker-compose down
 
-# Aplicar migraciones
-python manage.py migrate
+# Reiniciar
+- docker-compose restart
+
+### Instalación sin docker
+# Crear entorno virtual
+- python -m venv venv
+- venv\Scripts\activate  
+
+# Instalar dependencias
+- pip install -r requirements.txt
+
+# Configurar base de datos MySQL
+
+# (Crear base de datos 'veterinaria')
+
+# Migraciones
+- python manage.py migrate
+- python manage.py runserver
