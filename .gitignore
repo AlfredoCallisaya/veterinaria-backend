@@ -8,6 +8,9 @@ __pycache__/
 *.so
 *.egg-info/
 
+# Frontend 
+veterinaria-frontend/
+
 # Environments
 .env
 .venv
@@ -18,7 +21,7 @@ env/
 *.sqlite3
 *.db
 
-# Django migrations (¡IMPORTANTE!)
+# Django migrations 
 usuarios/migrations/
 
 # Django
@@ -41,3 +44,7 @@ Thumbs.db
 # Local settings
 local_settings.py
 "@ | Out-File -Encoding UTF8 .gitignore
+
+# Archivos de base de datos 
+*.dump
+*.backup
