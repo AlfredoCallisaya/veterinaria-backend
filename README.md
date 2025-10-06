@@ -12,9 +12,9 @@ Permite administrar clientes, mascotas, citas, consultas, inventario, compras, f
 ### Instalación rápida
 ```bash
 # Clonar el repositorio
-- git clone 
+- git clone https://github.com/AlfredoCallisaya/veterinaria-backend.git
 - cd veterinaria-backend
-
+- git clone https://github.com/AlfredoCallisaya/veterinaria-frontend.git
 # Ejecutar con Docker Compose
 - docker-compose up -d
 
