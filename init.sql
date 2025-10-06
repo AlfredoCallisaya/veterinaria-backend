@@ -37,6 +37,7 @@ CREATE TABLE `Rol` (
 
 LOCK TABLES `Rol` WRITE;
 /*!40000 ALTER TABLE `Rol` DISABLE KEYS */;
+INSERT INTO `Rol` VALUES (1,'Administrador','Administrador del sistema',1),(2,'Veterinario','M+â-®dico veterinario',1),(3,'Secretaria','Personal administrativo y de recepci+â-¦n',1);
 /*!40000 ALTER TABLE `Rol` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -58,7 +59,7 @@ CREATE TABLE `Usuario` (
   UNIQUE KEY `correo` (`correo`),
   KEY `Usuario_idRol_8480b98b_fk_Rol_idRol` (`idRol`),
   CONSTRAINT `Usuario_idRol_8480b98b_fk_Rol_idRol` FOREIGN KEY (`idRol`) REFERENCES `Rol` (`idRol`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -67,6 +68,7 @@ CREATE TABLE `Usuario` (
 
 LOCK TABLES `Usuario` WRITE;
 /*!40000 ALTER TABLE `Usuario` DISABLE KEYS */;
+INSERT INTO `Usuario` VALUES (1,'Admin','Sistema','admin@veterinaria.com','pbkdf2_sha256$1000000$ZugD8GTjPKlOYTEb2BWLdY$OJtoKY24YCXKL1aIDaQSMrsag0/oHwylsc0ysvRHSJU=',1),(2,'Juan Alfredo','Callisaya Galarza','juan.callisaya.57751@usalesiana.edu.bo','pbkdf2_sha256$1000000$SKEnb6gUbaEsx4Ww2Uut6C$QZA9GrepvxjX8ik054YhzfhFrag+DNB0D+n4bIxaAKo=',2);
 /*!40000 ALTER TABLE `Usuario` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -446,7 +448,7 @@ CREATE TABLE `django_session` (
 
 LOCK TABLES `django_session` WRITE;
 /*!40000 ALTER TABLE `django_session` DISABLE KEYS */;
-INSERT INTO `django_session` VALUES ('ue59bjrr2yvcqaonzkw66ivd9x0r9tad','.eJyrVopPLC3JiC8tTi2Kz0xRslIyVNJBFktKTM5OzQNJlBaXJhZl5hfrQYWK9VxzEzNznKAKUHRlJBZnALUo1QIAhmoiTQ:1uxSqI:YL6Xl7N3J-JOgIPNa5BorUNPAEJrAfeClPuBoalLrSs','2025-09-27 16:11:14.934456'),('vw2v5o0h6yj4dkb3f181c1t1wviigmsb','.eJyrVopPLC3JiC8tTi2Kz0xRslIyVNJBFktKTM5OzQNJlBaXJhZl5hfrQYWK9VxzEzNznKAKUHRlJBZnALUo1QIAhmoiTQ:1v5YDJ:I5PLnPpv9A5TzXYZvGe-fIX7jMtLkob_4JF9hzcBcJU','2025-10-19 23:32:25.261527');
+INSERT INTO `django_session` VALUES ('ue59bjrr2yvcqaonzkw66ivd9x0r9tad','.eJyrVopPLC3JiC8tTi2Kz0xRslIyVNJBFktKTM5OzQNJlBaXJhZl5hfrQYWK9VxzEzNznKAKUHRlJBZnALUo1QIAhmoiTQ:1uxSqI:YL6Xl7N3J-JOgIPNa5BorUNPAEJrAfeClPuBoalLrSs','2025-09-27 16:11:14.934456'),('vw2v5o0h6yj4dkb3f181c1t1wviigmsb','.eJyrVopPLC3JiC8tTi2Kz0xRslIyVNJBFktKTM5OzQNJlBaXJhZl5hfrQYWK9VxzEzNznKAKUHRlJBZnALUo1QIAhmoiTQ:1v5aRc:VTyu6b8BBpYvhTUikjlAWC5xUHNRZXlxDJpvH8F5PpA','2025-10-20 01:55:20.204360');
 /*!40000 ALTER TABLE `django_session` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -674,6 +676,7 @@ CREATE TABLE `rol` (
 
 LOCK TABLES `rol` WRITE;
 /*!40000 ALTER TABLE `rol` DISABLE KEYS */;
+INSERT INTO `rol` VALUES (1,'Superusuario','Acceso total al sistema',1),(2,'Administrador','Administra el sistema',1),(3,'Veterinario','Personal m+®dico',1),(4,'Secretaria','Personal administrativo',1);
 /*!40000 ALTER TABLE `rol` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -736,6 +739,7 @@ CREATE TABLE `usuario` (
 
 LOCK TABLES `usuario` WRITE;
 /*!40000 ALTER TABLE `usuario` DISABLE KEYS */;
+INSERT INTO `usuario` VALUES (1,'Admin','Principal','admin@veterinaria.com','pbkdf2_sha256$1000000$TQWRRh6ROJDnq3CFGwjGnI$kYlnUSH3AMhdhUd6TyhjaSQuFr2rx1F/nk6tK2J5198=',1),(2,'Juan Alfredo','Callisaya Galarza','juan.callisaya.57751@usalesiana.edu.bo','pbkdf2_sha256$1000000$UBcSxBoHqDBC4UUR7jvlZ0$tDOP8lexjZDt39Bes8F2Osz9E+CDYJ8tGmV31ZwWCk4=',2),(3,'Canela','Callisaya','canela@razavaca.com','pbkdf2_sha256$1000000$daSWreMcbXkwoNJX6kMR55$CYxbS/xO6gQARH2/Trap7V/g5CDPUCJvXhrMxMAdri4=',4),(5,'Jack','Callisaya','jack@gatoviejo.com','pbkdf2_sha256$1000000$a3OFhQ8GX1rXMK1bVGhH52$OeVzR5ez4kM20j6D8AhT4NFs4lZ18iT2DNyFTMn2sPk=',3);
 /*!40000 ALTER TABLE `usuario` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -780,4 +784,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-10-06  1:46:49
+-- Dump completed on 2025-10-06  2:22:08
