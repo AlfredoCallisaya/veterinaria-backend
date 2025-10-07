@@ -18,6 +18,7 @@ CREATE TABLE usuario (
     contrasena VARCHAR(255),
     estado BOOLEAN,
     idRol INT,
+    last_login DATETIME NULL,
     FOREIGN KEY (idRol) REFERENCES rol(idRol)
 );
 
@@ -202,7 +203,7 @@ INSERT INTO rol (nombreRol, descripcion, estado) VALUES
 ('Recepcionista', 'Gestiona citas y facturación', TRUE);
 
 -- Contraseña hasheada con Django (admin123)
-INSERT INTO usuario (nombres, apellidos, correo, contrasena, estado, idRol)
+INSERT INTO usuario (nombres, apellidos, correo, contrasena, estado, idRol, last_login)
 VALUES ('Admin', 'Principal', 'admin@veterinaria.com',
-'$pbkdf2-sha256$720000$3AJnOgSuMtQd2VrSRV7akF$UxQAtWqLrEy5fK8/ooNa5JtWUs8dH5u7XgGnW2z65CM=',
-TRUE, 1);
+'pbkdf2_sha256$1000000$RBdJy8R3QGaJ5yL9Hl91Br$NTGWYi3fqMM4j/VMXvdrXRIyKptpZe5H7ftojiV7YEE=',  
+TRUE, 1, NULL);
