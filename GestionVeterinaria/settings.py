@@ -76,24 +76,27 @@ WSGI_APPLICATION = 'GestionVeterinaria.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 #if os.getenv('DJANGO_ENV') == 'development':
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.mysql',
+#        'NAME': os.getenv('MYSQL_DATABASE', 'veterinaria'),
+#        'USER': os.getenv('MYSQL_USER', 'veterinaria_user'),
+#        'PASSWORD': os.getenv('MYSQL_PASSWORD', 'veterinaria_pass'),
+#        'HOST': os.getenv('DB_HOST', 'db'),
+#        'PORT': os.getenv('DB_PORT', '3306'),
+#    }
+#} 
+#else: (sqlLite, pero no usare )
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('MYSQL_DATABASE', 'veterinaria'),
-        'USER': os.getenv('MYSQL_USER', 'veterinaria_user'),
-        'PASSWORD': os.getenv('MYSQL_PASSWORD', 'veterinaria_pass'),
-        'HOST': os.getenv('DB_HOST', 'db'),
-        'PORT': os.getenv('DB_PORT', '3306'),
+        'NAME': 'veterinaria',
+        'USER': 'veterinaria_user',
+        'PASSWORD': 'veterinaria_pass',
+        'HOST': 'db',  
+        'PORT': '3306',
     }
-} 
-#else:
-    # Configuración por defecto (SQLite)
-    #DATABASES = {
-    #    'default': {
-    #        'ENGINE': 'django.db.backends.sqlite3',
-    #        'NAME': BASE_DIR / 'db.sqlite3',
-    #    }
-   # }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -165,8 +168,8 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 AUTHENTICATION_BACKENDS = [
-    'usuarios.backends.EmailBackend',  
-    'django.contrib.auth.backends.ModelBackend', 
+    'usuarios.backends.EmailBackend', 
+    'django.contrib.auth.backends.ModelBackend',
 ]
 
 AUTH_USER_MODEL = 'usuarios.UsuarioPersonalizado'
