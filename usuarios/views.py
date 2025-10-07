@@ -13,23 +13,23 @@ def login_view(request):
         correo = request.POST.get('username')
         password = request.POST.get('password')
         
-        from django.db import connection
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT idUsuario, contraseña FROM Usuario WHERE correo = %s", [correo])
-                user_data = cursor.fetchone()
-        except Exception as e:
-            pass
+       # from django.db import connection
+        #try:
+        #    with connection.cursor() as cursor:
+        #        cursor.execute("SELECT idUsuario, contraseña FROM Usuario WHERE correo = %s", [correo])
+        #        user_data = cursor.fetchone()
+        #except Exception as e:
+        #    pass
         
         backend = EmailBackend()
         user = backend.authenticate(request, username=correo, password=password)
         
         if user is not None:
-            from django.contrib.auth.hashers import check_password
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT contraseña FROM Usuario WHERE correo = %s", [correo])
-                db_password = cursor.fetchone()[0]
-                password_match = check_password(password, db_password)
+         #   from django.contrib.auth.hashers import check_password
+         #   with connection.cursor() as cursor:
+          #      cursor.execute("SELECT contraseña FROM Usuario WHERE correo = %s", [correo])
+           #     db_password = cursor.fetchone()[0]
+            #    password_match = check_password(password, db_password)
             
             login(request, user, backend='usuarios.backends.EmailBackend')
             return redirect('dashboard')
