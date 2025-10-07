@@ -19,7 +19,7 @@ Permite administrar clientes, mascotas, citas, consultas, inventario, compras, f
 - docker-compose up -d
 
 ### Acceder a la aplicación
-- Aplicación: http://localhost:8000
+- Aplicación: http://localhost:8001
 - Base de datos MySQL: localhost:3306
 
 ### Usuario por defecto
