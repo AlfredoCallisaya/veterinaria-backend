@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .backends import EmailBackend
 from .models import UsuarioPersonalizado, Rol
+from django.http import JsonResponse
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -13,23 +14,10 @@ def login_view(request):
         correo = request.POST.get('username')
         password = request.POST.get('password')
         
-       # from django.db import connection
-        #try:
-        #    with connection.cursor() as cursor:
-        #        cursor.execute("SELECT idUsuario, contraseña FROM Usuario WHERE correo = %s", [correo])
-        #        user_data = cursor.fetchone()
-        #except Exception as e:
-        #    pass
-        
         backend = EmailBackend()
         user = backend.authenticate(request, username=correo, password=password)
         
         if user is not None:
-         #   from django.contrib.auth.hashers import check_password
-         #   with connection.cursor() as cursor:
-          #      cursor.execute("SELECT contraseña FROM Usuario WHERE correo = %s", [correo])
-           #     db_password = cursor.fetchone()[0]
-            #    password_match = check_password(password, db_password)
             
             login(request, user, backend='usuarios.backends.EmailBackend')
             return redirect('dashboard')
@@ -65,7 +53,9 @@ def lista_usuarios(request):
         return redirect('dashboard')
     
     usuarios = UsuarioPersonalizado.objects.all()
-    return render(request, 'usuarios/lista_usuarios.html', {'usuarios': usuarios})
+    roles = Rol.objects.all() 
+    return render(request, 'usuarios/lista_usuarios.html', {'usuarios': usuarios, 'roles': roles})
+
 
 @login_required
 def registrar_usuario(request):
@@ -74,6 +64,7 @@ def registrar_usuario(request):
         return redirect('dashboard')
     
     if request.method == 'POST':
+        usuario_id = request.POST.get('usuario_id')
         nombres = request.POST.get('nombres', '').strip()
         apellidos = request.POST.get('apellidos', '').strip()
         correo = request.POST.get('correo', '').strip().lower()
@@ -81,50 +72,58 @@ def registrar_usuario(request):
         id_rol = request.POST.get('idRol')
         
         # Validaciones
-        if not all([nombres, apellidos, correo, password, id_rol]):
+        if not all([nombres, apellidos, correo, id_rol]):
             messages.error(request, 'Todos los campos son obligatorios')
-            return redirect('registrar_usuario')
-        
-        if len(password) < 8:
-            messages.error(request, 'La contraseña debe tener al menos 8 caracteres')
-            return redirect('registrar_usuario')
+            return redirect('lista_usuarios')
         
         try:
-            if UsuarioPersonalizado.objects.filter(correo=correo).exists():
-                messages.error(request, 'Este correo electrónico ya está registrado')
-                return redirect('registrar_usuario')
-            
             rol = Rol.objects.get(id=id_rol)
-            usuario = UsuarioPersonalizado(
-                nombres=nombres,
-                apellidos=apellidos,
-                correo=correo,
-                idRol=rol
-            )
-            usuario.set_password(password)
-            usuario.save()
-            
-            messages.success(request, f'Usuario {nombres} {apellidos} registrado exitosamente')
-            return redirect('lista_usuarios')
-            
+
+            if usuario_id:  
+                usuario = get_object_or_404(UsuarioPersonalizado, id=usuario_id)
+                usuario.nombres = nombres
+                usuario.apellidos = apellidos
+                usuario.correo = correo
+                usuario.idRol = rol
+                if password:
+                    usuario.set_password(password)
+                usuario.save()
+                messages.success(request, f'Usuario {nombres} {apellidos} actualizado correctamente')
+
+            else:  
+                if not password:
+                    messages.error(request, 'Debe ingresar una contraseña para crear un usuario nuevo')
+                    return redirect('lista_usuarios')
+
+                if UsuarioPersonalizado.objects.filter(correo=correo).exists():
+                    messages.error(request, 'El correo ya está registrado')
+                    return redirect('lista_usuarios')
+
+                usuario = UsuarioPersonalizado(
+                    nombres=nombres,
+                    apellidos=apellidos,
+                    correo=correo,
+                    idRol=rol
+                )
+                usuario.set_password(password)
+                usuario.save()
+                messages.success(request, f'Usuario {nombres} {apellidos} registrado exitosamente')
+
         except Rol.DoesNotExist:
-            messages.error(request, 'Rol seleccionado no válido')
+            messages.error(request, 'Rol no válido')
         except Exception as e:
-            messages.error(request, f'Error al registrar usuario: {str(e)}')
-        
-        return redirect('registrar_usuario')
-    
+            messages.error(request, f'Error: {e}')
+
+        return redirect('lista_usuarios')
+
+    usuarios = UsuarioPersonalizado.objects.all()
     roles = Rol.objects.all()
-    return render(request, 'usuarios/registrar_usuario.html', {'roles': roles})
-    
-    # Si es GET, mostrar el formulario
-    roles = Rol.objects.all()
-    return render(request, 'usuarios/registrar_usuario.html', {'roles': roles})
+    return render(request, 'usuarios/lista_usuarios.html', {'usuarios': usuarios, 'roles': roles})
 
 @login_required
 def eliminar_usuario(request, user_id):
-    if not request.user.is_superuser:
-        messages.error(request, 'Solo el Superusuario puede eliminar usuarios')
+    if not request.user.idRol.nombreRol == 'Administrador':
+        messages.error(request, 'Solo el Administrador puede eliminar usuarios')
         return redirect('lista_usuarios')
     
     usuario = get_object_or_404(UsuarioPersonalizado, id=user_id)
