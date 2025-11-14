@@ -28,6 +28,7 @@ Permite administrar clientes, mascotas, citas, consultas, inventario, compras, f
 
 ### Comandos útiles
 # Ver logs en tiempo real
+- docker-compose exec db mysql -u root -proot_password -e "USE veterinaria; SHOW TABLES;"
 - docker-compose logs -f web
 
 # Ejecutar comandos Django
