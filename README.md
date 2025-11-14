@@ -17,7 +17,11 @@ Permite administrar clientes, mascotas, citas, consultas, inventario, compras, f
 - git clone https://github.com/AlfredoCallisaya/veterinaria-frontend.git
 # Ejecutar con Docker Compose
 - docker-compose up -d
-
+# Hacer las migraciones de manera manual, por que no funciona de otra manera :'v
+- docker-compose exec web python manage.py makemigrations
+- docker-compose exec web python manage.py migrate 
+# Si dice que la tabla usuario o rol ya existen usar este comando
+- docker-compose exec web python manage.py migrate --fake
 ### Acceder a la aplicación
 - Aplicación: http://localhost:8001
 - Base de datos MySQL: localhost:3306
@@ -32,8 +36,11 @@ Permite administrar clientes, mascotas, citas, consultas, inventario, compras, f
 - docker-compose logs -f web
 
 # Ejecutar comandos Django
+- docker-compose exec web python manage.py showmigrations
+- docker-compose exec web python manage.py makemigrations
 - docker-compose exec web python manage.py migrate
 - docker-compose exec web python manage.py createsuperuser
+- docker-compose exec web python manage.py migrate --fake
 
 # Detener la aplicación
 - docker-compose down
