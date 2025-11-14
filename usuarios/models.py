@@ -1,76 +1,108 @@
 from django.db import models
-from django.contrib.auth.hashers import make_password, check_password
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import AbstractUser
 
-class Rol(models.Model):
-    id = models.AutoField(primary_key=True, db_column='idRol')
-    nombreRol = models.CharField(max_length=50, db_column='nombreRol')
-    descripcion = models.TextField(blank=True, null=True, db_column='descripcion')
-    estado = models.BooleanField(default=True, db_column='estado')
-    
-    class Meta:
-        db_table = 'rol'
-        managed = True
-    
-    def __str__(self):
-        return self.nombreRol
+class AuditoriaMixin(models.Model):
+    fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    fecha_modificacion = models.DateTimeField(auto_now=True, verbose_name="Última Modificación")
+    estado = models.BooleanField(default=True, verbose_name="Estado Activo")
 
-class UsuarioPersonalizado(AbstractBaseUser):
-    id = models.AutoField(primary_key=True, db_column='idUsuario')
-    nombres = models.CharField(max_length=100, db_column='nombres')
-    apellidos = models.CharField(max_length=100, db_column='apellidos')
-    correo = models.EmailField(unique=True, db_column='correo')
-    password  = models.CharField(max_length=255, db_column='contrasena')
-    idRol = models.ForeignKey(Rol, on_delete=models.SET_NULL, null=True, blank=True, db_column='idRol')
-    
-    USERNAME_FIELD = 'correo'
-    REQUIRED_FIELDS = ['nombres', 'apellidos']
-    
     class Meta:
-        db_table = 'usuario'
-        managed = True
-    
+        abstract = True
+
+class Rol(AuditoriaMixin):
+    id_rol = models.AutoField(primary_key=True)
+    nombre = models.CharField(max_length=50, unique=True, verbose_name="Nombre del Rol")
+    descripcion = models.CharField(max_length=255, blank=True, null=True)
+
     def __str__(self):
-        return f"{self.nombres} {self.apellidos}"
-    
-    #def set_password(self, raw_password):
-      #  self.contrasena = make_password(raw_password)
-    
-    #def check_password(self, raw_password):
-      #  return check_password(raw_password, self.contrasena)
-    
+        return self.nombre
+
+    class Meta:
+        verbose_name = "Rol"
+        verbose_name_plural = "Roles"
+        ordering = ['nombre']
+
+class Usuario(AbstractUser, AuditoriaMixin):
+    id_usuario = models.AutoField(primary_key=True) 
+    email = models.EmailField(unique=True, verbose_name='Correo Electrónico')
+
+    roles = models.ManyToManyField(
+        Rol,
+        through='UsuarioRol',
+        related_name='usuarios',
+        verbose_name="Roles del Usuario"
+    )
+
+    nombre = models.CharField(max_length=150, verbose_name="Nombre")
+    apellido = models.CharField(max_length=150, verbose_name="Apellido")
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['nombre', 'apellido']
+
+    def save(self, *args, **kwargs):
+        if not self.username:
+            self.username = self.email 
+        super().save(*args, **kwargs)
+
     def get_full_name(self):
-        return f"{self.nombres} {self.apellidos}"
-    
-    def get_short_name(self):
-        return self.nombres
+        return f"{self.nombre} {self.apellido}"
 
-    @property
-    def is_authenticated(self):
-        return True
+    def __str__(self):
+        return self.email
+
+    class Meta:
+        verbose_name = "Usuario"
+        verbose_name_plural = "Usuarios"
+
+class UsuarioRol(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    rol = models.ForeignKey(Rol, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('usuario', 'rol')
+        verbose_name = "Rol de Usuario"
+        verbose_name_plural = "Roles de Usuarios"
+
+class Persona(AuditoriaMixin):
+    id_persona = models.AutoField(primary_key=True)
     
-    @property
-    def is_anonymous(self):
-        return False
+    telefono = models.CharField(max_length=20, blank=True, null=True, verbose_name="Teléfono")
+    direccion = models.CharField(max_length=255, blank=True, null=True, verbose_name="Dirección")
     
-    @property
-    def is_active(self):
-        return True
+    usuario = models.OneToOneField(
+        Usuario, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='persona_info',
+        verbose_name="Cuenta de Usuario"
+    )
     
-    @property
-    def is_staff(self):
-        if self.idRol:
-            return self.idRol.nombreRol in ['Superusuario', 'Administrador']
-        return False
+    usuario_creacion = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name='personas_creadas')
+    usuario_modificacion = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name='personas_modificadas')
+
+    def __str__(self):
+        return self.usuario.get_full_name() if self.usuario else f"Persona #{self.id_persona}"
+
+    class Meta:
+        verbose_name = "Persona"
+        verbose_name_plural = "Personas"
+
+class Cliente(AuditoriaMixin):
+    id_cliente = models.AutoField(primary_key=True)
     
-    @property
-    def is_superuser(self):
-        if self.idRol:
-            return self.idRol.nombreRol == 'Superusuario'
-        return False
+    persona = models.OneToOneField(
+        Persona, 
+        on_delete=models.CASCADE, 
+        related_name='cliente_info',
+        verbose_name="Datos Personales del Cliente"
+    )
     
-    def has_perm(self, perm, obj=None):
-        return self.is_superuser
-    
-    def has_module_perms(self, app_label):
-        return self.is_superuser
+    usuario_creacion = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name='clientes_creados')
+    usuario_modificacion = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name='clientes_modificados')
+
+    def __str__(self):
+        return f"Cliente: {str(self.persona)}"
+
+    class Meta:
+        verbose_name = "Cliente"
+        verbose_name_plural = "Clientes"
