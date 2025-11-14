@@ -1,141 +1,107 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from .backends import EmailBackend
-from .models import UsuarioPersonalizado, Rol
+# usuarios/views.py
+from rest_framework import generics, permissions
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
+from rest_framework_simplejwt.views import TokenObtainPairView
+from django.contrib.auth.hashers import check_password
 
-def login_view(request):
-    if request.user.is_authenticated:
-        return redirect('dashboard')
-    
-    if request.method == 'POST':
-        correo = request.POST.get('username')
-        password = request.POST.get('password')
-        
-       # from django.db import connection
-        #try:
-        #    with connection.cursor() as cursor:
-        #        cursor.execute("SELECT idUsuario, contraseña FROM Usuario WHERE correo = %s", [correo])
-        #        user_data = cursor.fetchone()
-        #except Exception as e:
-        #    pass
-        
-        backend = EmailBackend()
-        user = backend.authenticate(request, username=correo, password=password)
-        
-        if user is not None:
-         #   from django.contrib.auth.hashers import check_password
-         #   with connection.cursor() as cursor:
-          #      cursor.execute("SELECT contraseña FROM Usuario WHERE correo = %s", [correo])
-           #     db_password = cursor.fetchone()[0]
-            #    password_match = check_password(password, db_password)
-            
-            login(request, user, backend='usuarios.backends.EmailBackend')
-            return redirect('dashboard')
-        else:
-            messages.error(request, 'Correo o contraseña incorrectos')
-    
-    return render(request, 'usuarios/login.html')
+from .models import Usuario, Rol, Persona
+from .serializers import (
+    LoginSerializer, UsuarioSerializer, RegistroSerializer, 
+    PersonaSerializer, RolSerializer
+)
 
-@login_required
-def logout_view(request):
-    logout(request)
-    messages.success(request, 'Sesión cerrada correctamente')
-    return redirect('login')
+# --- VISTAS DE AUTENTICACIÓN ---
 
-@login_required
-def dashboard(request):
-    user_id = request.session.get('_auth_user_id')
-    if not user_id:
-        return redirect('login')
-    
-    try:
-        user = UsuarioPersonalizado.objects.get(id=user_id)
-    except UsuarioPersonalizado.DoesNotExist:
-        return redirect('login')
-    
-    usuarios = UsuarioPersonalizado.objects.all()
-    return render(request, 'usuarios/dashboard.html', {'usuarios': usuarios})
+# 1. Login (Generación de Tokens JWT)
+# Utilizamos la vista estándar de simplejwt
+class CustomTokenObtainPairView(TokenObtainPairView):
+    # Serializer personalizado para validar correo/contraseña
+    serializer_class = LoginSerializer 
 
-@login_required
-def lista_usuarios(request):
-    if not (request.user.is_superuser or request.user.idRol.nombreRol == 'Administrador'):
-        messages.error(request, 'No tienes permisos para acceder a esta sección')
-        return redirect('dashboard')
-    
-    usuarios = UsuarioPersonalizado.objects.all()
-    return render(request, 'usuarios/lista_usuarios.html', {'usuarios': usuarios})
+# 2. Logout (No se requiere código de backend en Django para JWT Logout, 
+# ya que el frontend simplemente elimina el token)
 
-@login_required
-def registrar_usuario(request):
-    if not (request.user.is_superuser or request.user.idRol.nombreRol == 'Administrador'):
-        messages.error(request, 'No tienes permisos para esta acción')
-        return redirect('dashboard')
-    
-    if request.method == 'POST':
-        nombres = request.POST.get('nombres', '').strip()
-        apellidos = request.POST.get('apellidos', '').strip()
-        correo = request.POST.get('correo', '').strip().lower()
-        password = request.POST.get('password', '')
-        id_rol = request.POST.get('idRol')
-        
-        # Validaciones
-        if not all([nombres, apellidos, correo, password, id_rol]):
-            messages.error(request, 'Todos los campos son obligatorios')
-            return redirect('registrar_usuario')
-        
-        if len(password) < 8:
-            messages.error(request, 'La contraseña debe tener al menos 8 caracteres')
-            return redirect('registrar_usuario')
-        
+# 3. Obtener Datos del Usuario Autenticado y sus Roles
+class UserProfileView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
         try:
-            if UsuarioPersonalizado.objects.filter(correo=correo).exists():
-                messages.error(request, 'Este correo electrónico ya está registrado')
-                return redirect('registrar_usuario')
-            
-            rol = Rol.objects.get(id=id_rol)
-            usuario = UsuarioPersonalizado(
-                nombres=nombres,
-                apellidos=apellidos,
-                correo=correo,
-                idRol=rol
-            )
-            usuario.set_password(password)
-            usuario.save()
-            
-            messages.success(request, f'Usuario {nombres} {apellidos} registrado exitosamente')
-            return redirect('lista_usuarios')
-            
-        except Rol.DoesNotExist:
-            messages.error(request, 'Rol seleccionado no válido')
-        except Exception as e:
-            messages.error(request, f'Error al registrar usuario: {str(e)}')
-        
-        return redirect('registrar_usuario')
-    
-    roles = Rol.objects.all()
-    return render(request, 'usuarios/registrar_usuario.html', {'roles': roles})
-    
-    # Si es GET, mostrar el formulario
-    roles = Rol.objects.all()
-    return render(request, 'usuarios/registrar_usuario.html', {'roles': roles})
+            # Obtener el Usuario y la Persona relacionada
+            usuario = Usuario.objects.get(id=request.user.id)
+            persona = usuario.persona
 
-@login_required
-def eliminar_usuario(request, user_id):
-    if not request.user.is_superuser:
-        messages.error(request, 'Solo el Superusuario puede eliminar usuarios')
-        return redirect('lista_usuarios')
+            # Obtener los roles del usuario
+            roles_queryset = usuario.roles.all()
+            roles_data = [rol.nombre for rol in roles_queryset]
+            
+            # Serializar la data
+            persona_serializer = PersonaSerializer(persona)
+            usuario_serializer = UsuarioSerializer(usuario)
+
+            return Response({
+                'usuario': usuario_serializer.data,
+                'persona': persona_serializer.data,
+                'roles': roles_data
+            })
+        except Usuario.DoesNotExist:
+            return Response({'detail': 'Usuario no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        # 4. Registro de Clientes/Dueños (Crea Persona, Usuario y asigna Rol 'Dueño')
+class RegisterView(generics.CreateAPIView):
+    # Permite a cualquiera registrarse
+    permission_classes = [permissions.AllowAny]
+    serializer_class = RegistroSerializer
+
+    def perform_create(self, serializer):
+        # La lógica de creación (Persona, Usuario, asignación de rol 'Dueño')
+        # debe estar en el Serializer (RegistroSerializer) para mantener la lógica DRY.
+        serializer.save()
+        from rest_framework import viewsets
+from .permissions import IsAdminOrReadOnly, IsAdminOnly # Necesitas crear permisos personalizados
+
+# 5. Gestión de Usuarios del Sistema (Personal - CRUD)
+class UsuarioViewSet(viewsets.ModelViewSet):
+    queryset = Usuario.objects.all().select_related('persona').prefetch_related('roles')
+    serializer_class = UsuarioSerializer
+    # Solo los administradores pueden gestionar usuarios
+    permission_classes = [permissions.IsAuthenticated, IsAdminOnly] 
     
-    usuario = get_object_or_404(UsuarioPersonalizado, id=user_id)
-    
-    if usuario == request.user:
-        messages.error(request, 'No puedes eliminarte a ti mismo')
-        return redirect('lista_usuarios')
-    
-    if request.method == 'POST':
-        usuario.delete()
-        messages.success(request, 'Usuario eliminado exitosamente')
-        return redirect('lista_usuarios')
-    
-    return render(request, 'usuarios/eliminar_usuario.html', {'usuario': usuario})
+    # Asegurar que se guardan los IDs de auditoría al crear y actualizar
+    def perform_create(self, serializer):
+        # Asigna al usuario que está logueado como creador
+        serializer.save(UsuarioCreacion=self.request.user) 
+        
+    def perform_update(self, serializer):
+        # Asigna al usuario que está logueado como modificador
+        serializer.save(UsuarioModificacion=self.request.user) 
+
+# 6. Gestión de Roles (CRUD)
+class RolViewSet(viewsets.ModelViewSet):
+    queryset = Rol.objects.all()
+    serializer_class = RolSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    # Similar a UsuarioViewSet, implementas perform_create/update para auditoría.
+    # usuarios/permissions.py
+from rest_framework import permissions
+
+class IsAdminOnly(permissions.BasePermission):
+    """Permite el acceso solo si el usuario tiene el rol 'Administrador'."""
+    def has_permission(self, request, view):
+        # Verifica si el usuario está autenticado
+        if not request.user.is_authenticated:
+            return False
+            
+        # Verifica si el usuario tiene el rol 'Administrador'
+        # Nota: La relación N:M requiere un filtro a través de la tabla intermedia
+        return request.user.roles.filter(nombre='Administrador').exists()
+
+class IsAdminOrReadOnly(permissions.BasePermission):
+    """Permite el acceso de lectura a todos los autenticados y escritura solo al Administrador."""
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return request.user.is_authenticated
+        
+        # Permiso de escritura solo para el Administrador
+        return request.user.roles.filter(nombre='Administrador').exists()
