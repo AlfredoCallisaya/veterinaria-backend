@@ -1,13 +1,14 @@
 from django.urls import path
-from django.views.generic import RedirectView
-from . import views
+from rest_framework_simplejwt.views import TokenRefreshView
+from .views import CustomTokenObtainPairView, RegisterView, UserProfileView
 
 urlpatterns = [
-    path('', RedirectView.as_view(url='/login/', permanent=False)),
-    path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
-    path('dashboard/', views.dashboard, name='dashboard'),
-    path('usuarios/', views.lista_usuarios, name='lista_usuarios'),
-    path('usuarios/registrar/', views.registrar_usuario, name='registrar_usuario'),
-    path('usuarios/eliminar/<int:user_id>/', views.eliminar_usuario, name='eliminar_usuario'),
+    # 1. Obtener Token (Login)
+    path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    # 2. Refrescar Token
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # 3. Registrar Nuevo Cliente/Dueño
+    path('register/', RegisterView.as_view(), name='register'),
+    # 4. Obtener perfil y roles del usuario logueado
+    path('perfil/', UserProfileView.as_view(), name='user_profile'),
 ]
