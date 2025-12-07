@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Cliente, Mascota, Cita, Consulta, Tratamiento, ConsultaTratamiento
 from usuarios.serializers import UsuarioSerializer, PersonaSerializer 
+from usuarios.serializers import UsuarioBasicSerializer
 # Nota: Necesitas importar Persona y Usuario de tu app 'usuarios'
 
 # --- 1. CLIENTE y MASCOTA ---
@@ -89,3 +90,84 @@ class ConsultaSerializer(serializers.ModelSerializer):
         )['total_tratamientos'] or 0
         
         return costo_base + costo_tratamientos
+    
+
+
+class ConsultaConDetallesSerializer(serializers.ModelSerializer):
+    mascota_nombre = serializers.CharField(source='mascota.nombre', read_only=True)
+    mascota_especie = serializers.CharField(source='mascota.especie', read_only=True)
+    veterinario_nombre = serializers.SerializerMethodField()
+    cliente_nombre = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Consulta
+        fields = [
+            'id', 'mascota_id', 'veterinario_id', 'fecha_consulta', 'motivo',
+            'diagnostico', 'tratamiento', 'medicamentos', 'observaciones',
+            'costo', 'peso', 'temperatura', 'estado', 'mascota_nombre',
+            'mascota_especie', 'veterinario_nombre', 'cliente_nombre'
+        ]
+
+    def get_veterinario_nombre(self, obj):
+        return f"{obj.veterinario.nombre} {obj.veterinario.apellido}"
+
+    def get_cliente_nombre(self, obj):
+        return f"{obj.mascota.usuario.nombre} {obj.mascota.usuario.apellido}"
+
+class MascotaConConsultasSerializer(serializers.ModelSerializer):
+    consultas_count = serializers.IntegerField(read_only=True)
+    consultas_recientes = ConsultaConDetallesSerializer(many=True, read_only=True)
+    cliente_nombre = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Mascota
+        fields = [
+            'id', 'nombre', 'especie', 'raza', 'edad', 'sexo', 'estado',
+            'consultas_count', 'consultas_recientes', 'cliente_nombre'
+        ]
+
+    def get_cliente_nombre(self, obj):
+        return f"{obj.usuario.nombre} {obj.usuario.apellido}"
+    
+    
+
+class MascotaSerializer(serializers.ModelSerializer):
+    cliente_nombre = serializers.CharField(source='usuario.nombre_completo', read_only=True)
+    cliente_telefono = serializers.CharField(source='usuario.telefono', read_only=True)
+    cliente_email = serializers.CharField(source='usuario.email', read_only=True)
+    edad_display = serializers.CharField(source='edad_con_unidad', read_only=True)
+    
+    class Meta:
+        model = Mascota
+        fields = [
+            'id', 'nombre', 'especie', 'raza', 'edad', 'edad_display', 
+            'sexo', 'usuario', 'cliente_nombre', 'cliente_telefono', 
+            'cliente_email', 'estado', 'fecha_registro', 'observaciones'
+        ]
+        read_only_fields = ['fecha_registro']
+
+class MascotaCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Mascota
+        fields = ['nombre', 'especie', 'raza', 'edad', 'sexo', 'usuario', 'observaciones']
+
+class MascotaUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Mascota
+        fields = ['nombre', 'especie', 'raza', 'edad', 'sexo', 'usuario', 'estado', 'observaciones']
+
+class MascotaListSerializer(serializers.ModelSerializer):
+    cliente_nombre = serializers.CharField(source='usuario.nombre_completo', read_only=True)
+    sexo_display = serializers.CharField(source='get_sexo_display', read_only=True)
+    
+    class Meta:
+        model = Mascota
+        fields = [
+            'id', 'nombre', 'especie', 'raza', 'edad', 'sexo', 'sexo_display',
+            'cliente_nombre', 'estado', 'fecha_registro'
+        ]
+
+class MascotaBasicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Mascota
+        fields = ['id', 'nombre', 'especie', 'raza']
