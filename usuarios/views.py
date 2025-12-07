@@ -1,107 +1,97 @@
 # usuarios/views.py
-from rest_framework import generics, permissions
-from rest_framework.response import Response
+
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.views import APIView
-from rest_framework import status
+from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
-from django.contrib.auth.hashers import check_password
 
-from .models import Usuario, Rol, Persona
+from rest_framework.permissions import IsAuthenticated, AllowAny
+
+from .models import Usuario, Rol, Persona, Cliente
 from .serializers import (
-    LoginSerializer, UsuarioSerializer, RegistroSerializer, 
-    PersonaSerializer, RolSerializer
+    LoginSerializer,
+    UsuarioSerializer,
+    RegistroSerializer,
+    PersonaSerializer,
+    RolSerializer,
+    ClienteSerializer
 )
+from .permissions import IsAdminOnly, IsAdminOrReadOnly
 
-# --- VISTAS DE AUTENTICACIÓN ---
 
-# 1. Login (Generación de Tokens JWT)
-# Utilizamos la vista estándar de simplejwt
+# =============================
+# 1. LOGIN JWT
+# =============================
 class CustomTokenObtainPairView(TokenObtainPairView):
-    # Serializer personalizado para validar correo/contraseña
-    serializer_class = LoginSerializer 
+    serializer_class = LoginSerializer
 
-# 2. Logout (No se requiere código de backend en Django para JWT Logout, 
-# ya que el frontend simplemente elimina el token)
 
-# 3. Obtener Datos del Usuario Autenticado y sus Roles
+# =============================
+# 2. PERFIL DE USUARIO AUTENTICADO
+# =============================
 class UserProfileView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        try:
-            # Obtener el Usuario y la Persona relacionada
-            usuario = Usuario.objects.get(id=request.user.id)
-            persona = usuario.persona
+        usuario = request.user  # más seguro
+        persona = getattr(usuario, 'persona', None)
+        roles_data = [rol.nombre for rol in usuario.roles.all()]
 
-            # Obtener los roles del usuario
-            roles_queryset = usuario.roles.all()
-            roles_data = [rol.nombre for rol in roles_queryset]
-            
-            # Serializar la data
-            persona_serializer = PersonaSerializer(persona)
-            usuario_serializer = UsuarioSerializer(usuario)
+        return Response({
+            "usuario": UsuarioSerializer(usuario).data,
+            "persona": PersonaSerializer(persona).data if persona else None,
+            "roles": roles_data
+        })
 
-            return Response({
-                'usuario': usuario_serializer.data,
-                'persona': persona_serializer.data,
-                'roles': roles_data
-            })
-        except Usuario.DoesNotExist:
-            return Response({'detail': 'Usuario no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
-        # 4. Registro de Clientes/Dueños (Crea Persona, Usuario y asigna Rol 'Dueño')
+
+# =============================
+# 3. REGISTRO (CREA USUARIO + PERSONA + ROL)
+# =============================
 class RegisterView(generics.CreateAPIView):
-    # Permite a cualquiera registrarse
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [AllowAny]
     serializer_class = RegistroSerializer
 
     def perform_create(self, serializer):
-        # La lógica de creación (Persona, Usuario, asignación de rol 'Dueño')
-        # debe estar en el Serializer (RegistroSerializer) para mantener la lógica DRY.
         serializer.save()
-        from rest_framework import viewsets
-from .permissions import IsAdminOrReadOnly, IsAdminOnly # Necesitas crear permisos personalizados
 
-# 5. Gestión de Usuarios del Sistema (Personal - CRUD)
+
+# =============================
+# 4. CRUD DE USUARIOS (ADMIN)
+# =============================
 class UsuarioViewSet(viewsets.ModelViewSet):
-    queryset = Usuario.objects.all().select_related('persona').prefetch_related('roles')
+    queryset = Usuario.objects.all().prefetch_related("roles")
     serializer_class = UsuarioSerializer
-    # Solo los administradores pueden gestionar usuarios
-    permission_classes = [permissions.IsAuthenticated, IsAdminOnly] 
-    
-    # Asegurar que se guardan los IDs de auditoría al crear y actualizar
-    def perform_create(self, serializer):
-        # Asigna al usuario que está logueado como creador
-        serializer.save(UsuarioCreacion=self.request.user) 
-        
-    def perform_update(self, serializer):
-        # Asigna al usuario que está logueado como modificador
-        serializer.save(UsuarioModificacion=self.request.user) 
+    permission_classes = [IsAuthenticated, IsAdminOnly]
 
-# 6. Gestión de Roles (CRUD)
+    def perform_create(self, serializer):
+        serializer.save(usuario_creacion=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(usuario_modificacion=self.request.user)
+
+
+# =============================
+# 5. CRUD DE ROLES (SOLO ADMIN EDITA)
+# =============================
 class RolViewSet(viewsets.ModelViewSet):
     queryset = Rol.objects.all()
     serializer_class = RolSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
-    # Similar a UsuarioViewSet, implementas perform_create/update para auditoría.
-    # usuarios/permissions.py
-from rest_framework import permissions
+    permission_classes = [IsAuthenticated, IsAdminOrReadOnly]
 
-class IsAdminOnly(permissions.BasePermission):
-    """Permite el acceso solo si el usuario tiene el rol 'Administrador'."""
-    def has_permission(self, request, view):
-        # Verifica si el usuario está autenticado
-        if not request.user.is_authenticated:
-            return False
-            
-        # Verifica si el usuario tiene el rol 'Administrador'
-        # Nota: La relación N:M requiere un filtro a través de la tabla intermedia
-        return request.user.roles.filter(nombre='Administrador').exists()
 
-class IsAdminOrReadOnly(permissions.BasePermission):
-    """Permite el acceso de lectura a todos los autenticados y escritura solo al Administrador."""
-    def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
-            return request.user.is_authenticated
-        
-        # Permiso de escritura solo para el Administrador
-        return request.user.roles.filter(nombre='Administrador').exists()
+# =============================
+# 6. CRUD DE PERSONAS
+# =============================
+class PersonaViewSet(viewsets.ModelViewSet):
+    queryset = Persona.objects.all()
+    serializer_class = PersonaSerializer
+    permission_classes = [IsAuthenticated]
+
+
+# =============================
+# 7. CRUD DE CLIENTES
+# =============================
+class ClienteViewSet(viewsets.ModelViewSet):
+    queryset = Cliente.objects.all()
+    serializer_class = ClienteSerializer
+    permission_classes = [IsAuthenticated]

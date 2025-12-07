@@ -1,14 +1,13 @@
-from django.urls import path
-from rest_framework_simplejwt.views import TokenRefreshView
-from .views import CustomTokenObtainPairView, RegisterView, UserProfileView
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import UsuarioViewSet, RolViewSet, PersonaViewSet, ClienteViewSet
+
+router = DefaultRouter()
+router.register(r'usuarios', UsuarioViewSet)
+router.register(r'roles', RolViewSet)
+router.register(r'personas', PersonaViewSet)
+router.register(r'clientes', ClienteViewSet)
 
 urlpatterns = [
-    # 1. Obtener Token (Login)
-    path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    # 2. Refrescar Token
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    # 3. Registrar Nuevo Cliente/Dueño
-    path('register/', RegisterView.as_view(), name='register'),
-    # 4. Obtener perfil y roles del usuario logueado
-    path('perfil/', UserProfileView.as_view(), name='user_profile'),
+    path('', include(router.urls)),
 ]
