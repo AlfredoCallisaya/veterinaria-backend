@@ -183,7 +183,7 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-AUTH_USER_MODEL = 'usuarios.UsuarioPersonalizado'
+AUTH_USER_MODEL = "usuarios.Usuario"
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [],
